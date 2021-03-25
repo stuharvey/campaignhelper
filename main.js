@@ -1,7 +1,7 @@
 const Discord = require('discord.js')
+const RingTide = require('./RingTide')
 
 const DISCORD_KEY = process.env.DISCORD_KEY
-const TAVERN_CHANNEL = "test-channel"
 
 const client = new Discord.Client();
 
@@ -10,10 +10,13 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
+let game = null
+
 client.on('message', msg => {
-  console.info(msg)
-  if (msg.channel !== TAVERN_CHANNEL) return
-  console.info(msg)
+  // don't do anything here for now
+  
 });
+
+new RingTide(100, 5, client)
 
 client.login(DISCORD_KEY);
