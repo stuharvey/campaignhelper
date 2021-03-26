@@ -17,6 +17,7 @@ client.on('message', msg => {
   
 });
 
-new RingTide(100, 5, client)
+new RingTide(client)
 
-client.login(DISCORD_KEY);
+
+//client.login(DISCORD_KEY);
