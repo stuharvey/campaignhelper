@@ -12,7 +12,7 @@ const TAVERN_CHANNEL = "test-channel"
 const validCommands = ["!Testing", "!Sides", "!Players", "!Ante", "!NPCs", "!Start", "!Sit", "!Roll", "!Man", "!Port"]
 const prefix = "\\"
 const personalities = ['safe', 'standard','risky','chaotic']
-const npcNames = ['Alice','Bob','Clare','Don','Edward']
+const npcNames = ['Anton','Billiam','Clyde','Dom','Emma','Fredrick','Gilly','Hilda','Julia','Karen','Loli']
 
 class RingTide {
   //Asks the questions to setup the Game
@@ -163,7 +163,7 @@ class RingTide {
       else{
         msg.channel.send(msg.author.id + ' has sat down in seat ' + details)
         this.tableIds[pos] = senderID
-        this.tableSeats[pos] = msg.author.name
+        this.tableSeats[pos] = msg.author.username
         this.reservedSeats--
       }
     }
@@ -415,7 +415,6 @@ class RingTide {
     let maxRolled = 0
     for (let i = 0; i < this.diceCount; i++) {
       if(diceArray[i] == 1){
-        this.endVoyage(msg, "Crashed")
         return 0
       }
       if(diceArray[i] == this.diceSides){
@@ -448,6 +447,7 @@ class RingTide {
     for (let i = 0; i < this.seats; i++) {
       this.manStatus[i] = 1
     }
+    this.newVoyage(msg)
   }
 
   endGame(msg){
