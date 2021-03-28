@@ -33,7 +33,11 @@ function recieveInput(msg){
         //error?
       }
     }else{
-      game.action(msg, command, msg.content.split(" ")[1])
+      if(game != null){
+        game.action(msg, command, msg.content.split(" ")[1])
+      }else{
+        //Not Valid
+      }
     }
   }
 }
