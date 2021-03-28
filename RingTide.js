@@ -11,6 +11,8 @@
 const TAVERN_CHANNEL = "test-channel"
 const validCommands = ["!Testing", "!Sides", "!Players", "!Ante", "!NPCs", "!Start", "!Sit", "!Roll", "!Man", "!Port"]
 const prefix = "\\"
+const personalities = ['safe', 'standard','risky','chaotic']
+const npcNames = ['Alice','Bob','Clare','Don','Edward']
 
 class RingTide {
   //Asks the questions to setup the Game
@@ -32,33 +34,41 @@ class RingTide {
         if(details > 1){
           msg.channel.send('Rolling with with d' + details + '\s.  Got it.')
           this.diceSides = details
-        }else{
+        }
+        else{
           msg.channel.send('I\'m afraid d' + details + '\s don\'t exist.')
         }
-      }else if(command == "!Players"){
+      }
+      else if(command == "!Players"){
         if(details < 2){
           msg.channel.send('You need at least two players for Ring Tide.')
-        }else{
+        }
+        else{
           msg.channel.send('I\'ll get ' + details + ' seats ready.')
           this.seats = details
         }
-      }else if(command == "!Ante"){
+      }
+      else if(command == "!Ante"){
         if(details > 0){
           msg.channel.send('Everyone\'s tossing ' + details + ' into the ocean.')
           this.ante = details
         }else{
           msg.channel.send('Negative coins ain\'t a thing I\'ve ever heard of mate.')
         }
-      }else if(command == "!NPCs"){
+      }
+      else if(command == "!NPCs"){
         if(details > 0){
           msg.channel.send('I\'ll try to find some strangers to fill ' + details + ' seats.')
           this.ai = details
-        }else if(details == 0){
+        }
+        else if(details == 0){
           msg.channel.send('An invite only table, I like it!')
-        }else{
+        }
+        else{
           msg.channel.send('Give me a second, I gotta kick ' + (-1*details) + ' patrons out of my Tavern.')
         }
-      }else if(command == "!Start"){
+      }
+      else if(command == "!Start"){
         let readyToStart = 1
         if(this.diceSides == null){
           msg.channel.send('You gotta choose some dice, else there\'s nothing to roll with.')
@@ -79,7 +89,8 @@ class RingTide {
           this.startedStatus = 1
           this.startGame(msg)
         }
-      }else if(command == "!Testing"){
+      }
+      else if(command == "!Testing"){
         this.diceSides = 6
         this.ante = 6
         this.seats = 2
@@ -95,18 +106,22 @@ class RingTide {
     else{
       if(command == "!Sides" || command == "!Ante" || command == "!Players" || command == "!NPCs"){
         msg.channel.send('Ring Tide settings can\'t be changed mid game.')
-      }else if(command == "!Sit"){
+      }
+      else if(command == "!Sit"){
         this.claimSeat(msg, details)
-      }else if(this.reservedSeats != null && this.reservedSeats != 0){
+      }
+      else if(this.reservedSeats != null && this.reservedSeats != 0){
         msg.channel.send('The seats don\'t seem to be filled yet.\nThe current seating arrangement is:')
         for(let i = 0; i < this.seats; i++){
           if(this.tableIds[i] == '?'){
             msg.channel.send((i+1) + ' - [Empty]')
-          }else{
+          }
+          else{
             msg.channel.send((i+1) + ' - [' + this.tableSeats[i] + ']')
           }
         }
-      }else if(command == "!Roll" || command == "!Man" || command == "!Port"){
+      }
+      else if(command == "!Roll" || command == "!Man" || command == "!Port"){
         this.playerAction(msg, command, 0)
       }
     }
@@ -144,7 +159,8 @@ class RingTide {
     if(alreadySeated == 0){
       if(this.tableIds[pos] != "?"){
         msg.channel.send('It looks like seat ' + details + ' is already occupied.')
-      }else{
+      }
+      else{
         msg.channel.send(msg.author.id + ' has sat down in seat ' + details)
         this.tableIds[pos] = senderID
         this.tableSeats[pos] = msg.author.name
@@ -155,8 +171,10 @@ class RingTide {
       for(let i = 0; i < this.seats; i++){
         if(this.tableIds[i] == "?"){
           this.isAI[i] = 1
-          this.tableSeats[i] = "Alice" //Add AI
-          this.tableIds[i] = "risky" //Add AI personality
+          //Randomly generates NPC name
+          this.tableSeats[i] = npcNames[Math.floor(Math.random() * npcNames.length)]
+          //Randomly generates NPC personality
+          this.tableIds[i] = personalities[Math.floor(Math.random() * personalities.length)]
           msg.channel.send('Please welcome ' + this.tableSeats[i] + ' to the table, sitting in seat ' + (i+1))
         }
       }
@@ -180,7 +198,7 @@ class RingTide {
     this.diceCount = 1
     msg.channel.send('A fresh new Voyage led by Captain ' + this.tableSeats[this.captainSeat] + '\nRight now there\'s ' + this.roundNum + ' coin on the line.  And ' + this.ocean + ' still left in the ocean.\nThe crew looks towards ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
     if(this.isAI[this.playerTurn] == 1){
-      this.playerAction(msg, this.aiDecision(msg), 1)
+      this.playerAction(msg, this.aiDecision(), 1)
     }
   }
 
@@ -207,9 +225,10 @@ class RingTide {
       //
       msg.channel.send('The Voyage continues, with ' + this.roundNum + ' coins on the line and ' + this.ocean + ' coin still left in the ocean')
       if(this.diceCount * 2 > this.diceSides){
-        msg.channel.send('The waters are looking rough as we\'re rolling ' + this.diceCount + 'd' + this.diceSides)
-      }else{
-        msg.channel.send('It\'s looking to be smooth sailing as we\'re rolling ' + this.diceCount + 'd' + this.diceSides)
+        msg.channel.send('The waters are looking rough as we\'re rolling ' + this.diceCount + 'd' + this.diceSides + 's')
+      }
+      else{
+        msg.channel.send('It\'s looking to be smooth sailing as we\'re rolling ' + this.diceCount + 'd' + this.diceSides + 's')
       }
       msg.channel.send('And a quick checkin with our sailors shows that:')
       for (let i = 0; i < this.seats; i++) {
@@ -217,7 +236,8 @@ class RingTide {
         let captain = ""
         if(this.manStatus[i] == 0){
           status = ' is resting at a port '
-        }else{
+        }
+        else{
           status = ' is risking it at sea '
         }
         if(this.captainSeat == i){
@@ -229,14 +249,16 @@ class RingTide {
       //Initiate who needs to take a turn
       if(this.captainSeat == this.playerTurn){
         msg.channel.send('Think you can solo the sea again Captain ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
-      }else{
+      }
+      else{
         msg.channel.send('Now to the action, ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
       }
       //If an NPC is called on to take a Man/Port Action
       if(this.isAI[this.playerTurn] == 1){
-        this.playerAction(msg, this.aiDecision(msg), 1)
+        this.playerAction(msg, this.aiDecision(), 1)
       }
-    }else{
+    }
+    else{
       endVoyage(msg,"emptyOcean")
     }
   }
@@ -249,16 +271,19 @@ class RingTide {
         if(this.ocean >= this.activeCrew){
           //The Voyage continues
           this.newRound(msg)
-        }else{
+        }
+        else{
           //Not enough coins in the ocean
           this.endVoyage(msg,"emptyOcean")
         }
-      }else{
+      }
+      else{
         //The Voyage Crashes
         if(this.ocean >= this.seats){
           //A new Voyage begins
           this.newVoyage(msg)
-        }else{
+        }
+        else{
           //Not enough coins in the ocean
           this.endVoyage(msg,"emptyOcean")
         }
@@ -266,8 +291,14 @@ class RingTide {
       }
     //The game is waiting on a player to !Man or !Port.  It is waiting on the player in seat (this.playerTurn + 1)
     //Add AI override??
-    }else if(this.readyToRoll == 0 && (this.tableIds[this.playerTurn] == msg.author.id || aiAction == 1) && (input == "!Man" || input == "!Port")){
+    }
+    //First are we looking for a player to give a Man or Port Comman
+    //Second is the command given from the right player or an aiAction
+    //Lastly is the command Man or Port?
+    else if(this.readyToRoll == 0 && (this.tableIds[this.playerTurn] == msg.author.id || aiAction == 1) && (input == "!Man" || input == "!Port")){
       if(input == "!Man"){
+        //If we were waiting for a command from the Captain, then he's the only active Sailor
+        //This should immediately go into the roll phase
         if(this.playerTurn == this.captainSeat){
           msg.channel.send('Man. Bold choice by Captain ' + this.tableSeats[this.captainSeat] + '. The dice are yours to (!Roll).')
           this.readyToRoll = 1
@@ -276,80 +307,98 @@ class RingTide {
           }
           return
         }
+        //If command is from someone who is not a captain, proceed
         else{
           msg.channel.send('Man. ' + this.tableSeats[this.playerTurn] + ' has faith in the Captain ' + this.tableSeats[this.captainSeat])
         }
-      }else if(input == "!Port"){
+      }
+      //If the Port action is taken
+      else if(input == "!Port"){
         this.activeCrew--
-        this.oceanBuffer -= this.roundNum
+        //The coins at stake are permanently gained by the player
         this.winnings[this.playerTurn] += this.roundNum
+        //And cannot go tumblingback into the ocean
+        this.oceanBuffer -= this.roundNum
+        //The player is out for the remainder of the voyage
         this.manStatus[this.playerTurn] = 0
-        console.log('Port problem')
-        if(this.playerTurn == this.captainSeat){
+        //If everyone has Ported, the voyage is over
+        if(this.activeCrew == 0){
           this.endVoyage(msg,"Ported")
-        }else{
+          return
+        }
+        //Otherwise continue
+        else{
           msg.channel.send('Port. Count those coins, that\'s ' + this.roundNum + ' for ' + this.tableSeats[this.playerTurn])
         }
       }
-      this.playerTurn = (this.playerTurn + 1) % this.seats
       //If there is only one active crew, then the choice of man or port falls on the captain
       if(this.activeCrew == 1){
         msg.channel.send('Captain ' + this.tableSeats[this.captainSeat] + ', your crew seems to have abandoned you.\nDoes the Voyage continue solo (!Man) or are you ready to anchor it (!Port)?')
         this.playerTurn = this.captainSeat
         if(this.isAI[this.captainSeat] == 1){
-          this.playerAction(msg, this.aiDecision(msg), 1)
+          this.playerAction(msg, this.aiDecision(), 1)
         }
         return
       }
       //Gets the next player who hasn't ported
+      this.playerTurn = (this.playerTurn + 1) % this.seats
       while(this.manStatus[this.playerTurn] == 0){
         this.playerTurn = (this.playerTurn + 1) % this.seats
       }
+      //If this is reached, active players > 1
+      //So if it's the captain's turn, it's time to roll
       if(this.playerTurn == this.captainSeat){
         this.readyToRoll = 1
         msg.channel.send('Looks like you\'ve got a crew of ' + (this.activeCrew - 1) + ' Captain ' + this.tableSeats[this.playerTurn] + '.  (!Roll) when you\'re ready!')
         if(this.isAI[this.playerTurn] == 1){
           msg.channel.send('Captain ' + this.tableSeats[this.playerTurn] + ' is an NPC, someone else needs to enter (!Roll)')
         }
-      }else{
+      }
+      //If it isn't time to roll inform the next player that they need to make an action
+      else{
         msg.channel.send('The crew looks towards ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
         if(this.isAI[this.playerTurn] == 1){
-          this.playerAction(msg, this.aiDecision(msg), 1)
+          this.playerAction(msg, this.aiDecision(), 1)
         }
       }
 
     }
   }
 
-  aiDecision(msg){
+  aiDecision(){
+    //Get the Personality and generate a random number
     let personality = this.tableIds[this.playerTurn]
     let randomness = Math.floor(Math.random() * (this.diceSides-2))  
     let odds = this.diceCount / this.diceSides
     if(personality == 'safe'){
       if(odds + (randomness/this.diceSides) > .6){
         return '!Port'
-      }else{
+      }
+      else{
         return '!Man'
       }
     }
     if(personality == 'standard'){
       if(odds > .4){
         return '!Port'
-      }else{
+      }
+      else{
         return '!Man'
       }
     }
     if(personality == 'risky'){
       if(odds - (randomness/this.diceSides) > .4){
         return '!Port'
-      }else{
+      }
+      else{
         return '!Man'
       }
     }
     if(personality == 'chaotic'){
       if(randomness%2 == 0){
         return '!Port'
-      }else{
+      }
+      else{
         return '!Man'
       }
     }
@@ -373,7 +422,7 @@ class RingTide {
         maxRolled = 1
       }
     }
-    msg.channel.send('A Succesful Voyage. The Tide won\'t sink y\'all.')
+    msg.channel.send('Success. The Tide won\'t sink y\'all.')
     if(maxRolled == 0){
       msg.channel.send('But the Tide gets stronger. Roll an additional d' + this.diceSides + ' next round.\n')
       this.diceCount++
@@ -387,17 +436,18 @@ class RingTide {
         this.winnings[i] += this.manStatus[i] * this.roundNum
       }
       this.endGame(msg)
-    }else if(endMethod == "Crashed"){
+      return
+    }
+    else if(endMethod == "Crashed"){
       msg.channel.send('The Voyage Crashed. You can\'t escape the Tide.\n' + this.oceanBuffer + ' coin go pouring back into the Ocean.\n')
       this.ocean += this.oceanBuffer
-    }else if(endMethod == "Ported"){
+    }
+    else if(endMethod == "Ported"){
       msg.channel.send('Port. Everyone got out safely. Even the Captain ' + this.tableSeats[this.captainSeat] + ' escaped with ' + this.roundNum + ' coin')
     }
     for (let i = 0; i < this.seats; i++) {
-      this.manStatus.push(1)
+      this.manStatus[i] = 1
     }
-    this.oceanBuffer = 0
-    this.roundNum = 0
   }
 
   endGame(msg){
@@ -406,7 +456,7 @@ class RingTide {
       msg.channel.send(this.tableSeats[i] + ' walks away with ' + this.winnings[i] + ' coin.')
     }
     msg.channel.send('And the ocean kept the final ' + this.ocean + ' coin.')
-    this.inputNeeded = "GameOver"
+    return
   }
 }
 module.exports = RingTide
