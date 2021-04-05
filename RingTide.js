@@ -8,9 +8,8 @@
  * The game concludes when there are not enough coins in the center of the table for everyone in the voyage to take a coin (the house profits these “spare coins”)
  */
 
-const TAVERN_CHANNEL = "test-channel"
+const TAVERN_CHANNEL = "the-tavern"
 const validCommands = ["!Testing", "!Sides", "!Players", "!Ante", "!NPCs", "!Start", "!Sit", "!Roll", "!Man", "!Port"]
-const prefix = "\\"
 const personalities = ['safe', 'standard','risky','chaotic']
 const npcNames = ['Anton','Billiam','Clyde','Dom','Emma','Fredrick','Gilly','Hilda','Julia','Karen','Loli']
 
@@ -20,7 +19,7 @@ class RingTide {
     this.startedStatus = 0
   }
   setUpMessage(){
-    return 'Ah, Ring Tide.  May ye\'s Port always rest before the Tide\'s Pull.\n\'Fore we start, a few things gotta be answered.\n(!Sides) How many sides on ye dice?\n(!Ante) How much each of yous be tossin\' in the Ocean?\n(!Players) How many people be gatherin\' round the table?\n(!NPCs) Are any of them NPC\'s? If so how many?\n(!Start) Once that\'s all figured out we can begin the game.'
+    return 'Ah, Ring Tide.  May ye\'s Port always rest before the Tide\'s Pull.\n\'Fore we start, a few things gotta be answered.\n`(!Sides) How many sides on ye dice?\n(!Ante) How much each of yous be tossin\' in the Ocean?\n(!Players) How many people be gatherin\' round the table?\n(!NPCs) Are any of them NPC\'s? If so how many?\n(!Start) Once that\'s all figured out we can begin the game.`'
   }
 
   action(msg, command, details){
@@ -99,7 +98,7 @@ class RingTide {
         this.startGame(msg)
       }
       else{
-        msg.channel.send('Command not registered.  You\'re currently setting up your game of Ring Tide, valid commands are:\n!Sides -> How many sides are on the dice for the Ring Tide game.\n!Players -> How many seats are there going to be at the table.\n!NPCs -> How many AI opponents will be at the table.\n!Start -> Starts the Ring Tide Game')
+        msg.channel.send('Command not registered.  You\'re currently setting up your game of Ring Tide, valid commands are:\n`!Sides -> How many sides are on the dice for the Ring Tide game.\n!Players -> How many seats are there going to be at the table.\n!NPCs -> How many AI opponents will be at the table.\n!Start -> Starts the Ring Tide Game`')
       }
     }
     //In-Game Commands
@@ -143,12 +142,13 @@ class RingTide {
       this.winnings.push(0)
       this.manStatus.push(1)
     }
-    msg.channel.send('One last thing before we start.  Where\'s everyone sitting?\nThere are ' + this.seats + ' seats so enter (!Sit) and a number between 1 and ' + this.seats + ' to claim a spot.')
+    msg.channel.send('One last thing before we start.  Where\'s everyone sitting?\nThere are ' + this.seats + ' seats so `enter (!Sit) and a number between 1 and ' + this.seats + '` to claim a spot.')
   }
 
   claimSeat(msg, details){
     let pos = details - 1
     let senderID = msg.author.id
+    let user = msg.guild.member(msg.author).nickname
     let alreadySeated = 0
     for(let i = 0; i < this.seats; i++){
       if(this.tableIds[i] == senderID){
@@ -158,12 +158,12 @@ class RingTide {
     }
     if(alreadySeated == 0){
       if(this.tableIds[pos] != "?"){
-        msg.channel.send('It looks like seat ' + details + ' is already occupied.')
+        msg.channel.reply('It looks like seat ' + details + ' is already occupied.')
       }
       else{
-        msg.channel.send(msg.author.id + ' has sat down in seat ' + details)
+        msg.channel.send(user + ' has sat down in seat ' + details)
         this.tableIds[pos] = senderID
-        this.tableSeats[pos] = msg.author.username
+        this.tableSeats[pos] = user
         this.reservedSeats--
       }
     }
@@ -178,12 +178,19 @@ class RingTide {
           msg.channel.send('Please welcome ' + this.tableSeats[i] + ' to the table, sitting in seat ' + (i+1))
         }
       }
-      msg.channel.send('And just like that the seats are filled!\nHere\'s how things are looking:')
+      let stringBuilder = 'And just like that the seats are filled!\nHere\'s how things are looking:'
       for(let i = 0; i < this.seats; i++){
-        msg.channel.send((i+1) + ' - [' + this.tableSeats[i] + ']')
+        if(i == 0){
+          stringBuilder += '`'
+        }
+        stringBuilder += '\nSeat [' + (i+1) + '] - ' + this.tableSeats[i]
+        if(i+1 == this.seats){
+          stringBuilder += '`'
+        }
       }
 
       this.captainSeat = 0
+      msg.channel.send(stringBuilder)
       this.newVoyage(msg)
     }
   }
@@ -196,7 +203,7 @@ class RingTide {
     this.playerTurn = (this.captainSeat + 1) % this.seats
     this.activeCrew = this.seats
     this.diceCount = 1
-    msg.channel.send('A fresh new Voyage led by Captain ' + this.tableSeats[this.captainSeat] + '\nRight now there\'s ' + this.roundNum + ' coin on the line.  And ' + this.ocean + ' still left in the ocean.\nThe crew looks towards ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
+    msg.channel.send('A New Voyage led by Captain ' + this.tableSeats[this.captainSeat] + '\n' + this.roundStatus(msg) + '\n\n' + this.tableSeats[this.playerTurn] + ' `'+ this.roundNum + ' coin at stake`. (!Man) or (!Port)?')
     if(this.isAI[this.playerTurn] == 1){
       this.playerAction(msg, this.aiDecision(), 1)
     }
@@ -223,35 +230,13 @@ class RingTide {
       this.oceanBuffer += this.activeCrew
       //Ring Tide status readout
       //
-      msg.channel.send('The Voyage continues, with ' + this.roundNum + ' coins on the line and ' + this.ocean + ' coin still left in the ocean')
-      if(this.diceCount * 2 > this.diceSides){
-        msg.channel.send('The waters are looking rough as we\'re rolling ' + this.diceCount + 'd' + this.diceSides + 's')
-      }
-      else{
-        msg.channel.send('It\'s looking to be smooth sailing as we\'re rolling ' + this.diceCount + 'd' + this.diceSides + 's')
-      }
-      msg.channel.send('And a quick checkin with our sailors shows that:')
-      for (let i = 0; i < this.seats; i++) {
-        let status
-        let captain = ""
-        if(this.manStatus[i] == 0){
-          status = ' is resting at a port '
-        }
-        else{
-          status = ' is risking it at sea '
-        }
-        if(this.captainSeat == i){
-          captain = "Captain "
-        }
-        msg.channel.send(captain + this.tableSeats[i] + status + ' with ' + this.winnings[i] + ' coin safely secured.')
-      }
-      //Status readout complete
+      msg.channel.send('The Voyage continues:\n' + this.roundStatus(msg))
       //Initiate who needs to take a turn
       if(this.captainSeat == this.playerTurn){
-        msg.channel.send('Think you can solo the sea again Captain ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
+        msg.channel.send('\nThink you can solo the sea again Captain ' + this.tableSeats[this.playerTurn] + ' `'+ this.roundNum + ' coin at stake.` (!Man) or (!Port)?')
       }
       else{
-        msg.channel.send('Now to the action, ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
+        msg.channel.send('\n' + this.tableSeats[this.playerTurn] + ' `'+ this.roundNum + ' coin at stake.` (!Man) or (!Port)?')
       }
       //If an NPC is called on to take a Man/Port Action
       if(this.isAI[this.playerTurn] == 1){
@@ -281,7 +266,7 @@ class RingTide {
         //The Voyage Crashes
         if(this.ocean >= this.seats){
           //A new Voyage begins
-          this.newVoyage(msg)
+          this.endVoyage(msg,"Crashed")
         }
         else{
           //Not enough coins in the ocean
@@ -300,16 +285,17 @@ class RingTide {
         //If we were waiting for a command from the Captain, then he's the only active Sailor
         //This should immediately go into the roll phase
         if(this.playerTurn == this.captainSeat){
-          msg.channel.send('Man. Bold choice by Captain ' + this.tableSeats[this.captainSeat] + '. The dice are yours to (!Roll).')
+          let stringBuilder = '`Man` Bold choice by Captain ' + this.tableSeats[this.captainSeat] + '. `type (!Roll)`'
           this.readyToRoll = 1
           if(this.isAI[this.captainSeat] == 1){
-            msg.channel.send('Captain ' + this.tableSeats[this.captainSeat] + ' is an NPC, someone else needs to enter (!Roll)')
+            stringBuilder += '\nCaptain ' + this.tableSeats[this.captainSeat] + ' is an NPC, someone else needs to enter (!Roll)'
           }
+          msg.channel.send(stringBuilder)
           return
         }
         //If command is from someone who is not a captain, proceed
         else{
-          msg.channel.send('Man. ' + this.tableSeats[this.playerTurn] + ' has faith in the Captain ' + this.tableSeats[this.captainSeat])
+          msg.channel.send('`Man` ' + this.tableSeats[this.playerTurn] + ' has faith in the Captain ' + this.tableSeats[this.captainSeat])
         }
       }
       //If the Port action is taken
@@ -328,12 +314,12 @@ class RingTide {
         }
         //Otherwise continue
         else{
-          msg.channel.send('Port. Count those coins, that\'s ' + this.roundNum + ' for ' + this.tableSeats[this.playerTurn])
+          msg.channel.send('`Port` Count those coins, that\'s ' + this.roundNum + ' for ' + this.tableSeats[this.playerTurn])
         }
       }
       //If there is only one active crew, then the choice of man or port falls on the captain
       if(this.activeCrew == 1){
-        msg.channel.send('Captain ' + this.tableSeats[this.captainSeat] + ', your crew seems to have abandoned you.\nDoes the Voyage continue solo (!Man) or are you ready to anchor it (!Port)?')
+        msg.channel.send('Captain ' + this.tableSeats[this.captainSeat] + ', your crew seems to have abandoned you.\n`'+ this.roundNum + ' coin at stake.` Does the Voyage continue solo (!Man) or are you ready to anchor it (!Port)?')
         this.playerTurn = this.captainSeat
         if(this.isAI[this.captainSeat] == 1){
           this.playerAction(msg, this.aiDecision(), 1)
@@ -349,20 +335,39 @@ class RingTide {
       //So if it's the captain's turn, it's time to roll
       if(this.playerTurn == this.captainSeat){
         this.readyToRoll = 1
-        msg.channel.send('Looks like you\'ve got a crew of ' + (this.activeCrew - 1) + ' Captain ' + this.tableSeats[this.playerTurn] + '.  (!Roll) when you\'re ready!')
+        let stringBuilder = 'With a crew of ' + (this.activeCrew - 1) + ' the Voyage is ready. `Captain ' + this.tableSeats[this.playerTurn] + ' type (!Roll)`'
         if(this.isAI[this.playerTurn] == 1){
-          msg.channel.send('Captain ' + this.tableSeats[this.playerTurn] + ' is an NPC, someone else needs to enter (!Roll)')
+          stringBuilder += '\nCaptain ' + this.tableSeats[this.playerTurn] + ' is an NPC, someone else needs to enter (!Roll)'
         }
+        msg.channel.send(stringBuilder)
       }
       //If it isn't time to roll inform the next player that they need to make an action
       else{
-        msg.channel.send('The crew looks towards ' + this.tableSeats[this.playerTurn] + '.  (!Man) or (!Port)?')
+        msg.channel.send(this.tableSeats[this.playerTurn] + ' `'+ this.roundNum + ' coin at stake`. (!Man) or (!Port)?')
         if(this.isAI[this.playerTurn] == 1){
           this.playerAction(msg, this.aiDecision(), 1)
         }
       }
 
     }
+  }
+
+  roundStatus(msg){
+    let stringBuilder = '`The ' + this.diceCount + 'd' + this.diceSides +' Voyage has ' + this.roundNum + ' coin at stake, with ' + this.ocean +' still in the ocean.'
+    for (let i = 0; i < this.seats; i++) {
+      stringBuilder += '\n'
+      if(i == this.captainSeat){
+        stringBuilder += 'C '
+      }
+      stringBuilder += 'Seat [' + (i+1) + ']- ' + this.tableSeats[i] + ' has secured ' + this.winnings[i] + ' coin and'
+      if(this.manStatus[i] == 1){
+        stringBuilder += ' is (Still In) this voyage.'
+      }else{
+        stringBuilder += ' is at (Port)'
+      }
+    }
+    stringBuilder += '`'
+    return stringBuilder
   }
 
   aiDecision(){
@@ -407,25 +412,30 @@ class RingTide {
 
   rollDice(msg){
     let diceArray = []
-    msg.channel.send('And the dice are rolled:')
+    let stringBuilder = 'And the dice are rolled:\n'
     for (let i = 0; i < this.diceCount; i++) {
       diceArray.push(1 + Math.floor(Math.random() * (this.diceSides)))
-      msg.channel.send('[' + diceArray[i] + ']')
+      stringBuilder += '[' + diceArray[i] + ']'
+      if(i+1 < this.diceCount){
+        stringBuilder += '-'
+      }
     }
     let maxRolled = 0
     for (let i = 0; i < this.diceCount; i++) {
       if(diceArray[i] == 1){
+        msg.channel.send(stringBuilder)
         return 0
       }
       if(diceArray[i] == this.diceSides){
         maxRolled = 1
       }
     }
-    msg.channel.send('Success. The Tide won\'t sink y\'all.')
+    stringBuilder += '\n`Success`. The Tide won\'t sink y\'all.'
     if(maxRolled == 0){
-      msg.channel.send('But the Tide gets stronger. Roll an additional d' + this.diceSides + ' next round.\n')
+      stringBuilder += '\nBut the Tide gets stronger. `Roll an additional d' + this.diceSides + ' next round`.\n'
       this.diceCount++
     }
+    msg.channel.send(stringBuilder)
     return 1
   }
 
@@ -442,7 +452,7 @@ class RingTide {
       this.ocean += this.oceanBuffer
     }
     else if(endMethod == "Ported"){
-      msg.channel.send('Port. Everyone got out safely. Even the Captain ' + this.tableSeats[this.captainSeat] + ' escaped with ' + this.roundNum + ' coin')
+      msg.channel.send('`Port` Everyone got out safely. Even the Captain ' + this.tableSeats[this.captainSeat] + ' escaped with ' + this.roundNum + ' coin')
     }
     for (let i = 0; i < this.seats; i++) {
       this.manStatus[i] = 1
@@ -451,12 +461,22 @@ class RingTide {
   }
 
   endGame(msg){
-    msg.channel.send('It looks like there isn\'t enough coin in the ocean for more sailing.\nIt\'s been a pleasure, but that means this game of Ring Tide is concluded.')
+    let stringBuilder = 'It looks like there isn\'t enough coin in the ocean for more sailing.\nIt\'s been a pleasure, but that means this game of `Ring Tide is concluded`.'
     for (let i = 0; i < this.seats; i++) {
-      msg.channel.send(this.tableSeats[i] + ' walks away with ' + this.winnings[i] + ' coin.')
+      if(i == 0){
+        stringBuilder +='\n`' + this.tableSeats[i] + ' walks away with ' + this.winnings[i] + ' coin.'
+      }
+      else{
+        stringBuilder +='\n' + this.tableSeats[i] + ' walks away with ' + this.winnings[i] + ' coin.'
+      }
     }
-    msg.channel.send('And the ocean kept the final ' + this.ocean + ' coin.')
+    stringBuilder += '\nAnd the ocean kept the final ' + this.ocean + ' coin.`'
+    msg.channel.send(stringBuilder)
     return
+  }
+
+  rules(msg){
+    return 'Ring Tide: A dice game best played with a large group.\n\nAfter agreeing on a set of dice (d6s are referred to as “Rough Waters” whereas d12s are considered “Smooth Sailing”) and a “Captain” (the first player to roll), the entire buy-in goes into a single pile known as “The Ocean.” The game then takes place in “Voyages” with each voyage having a series of “Rounds.”  At the beginning of each round all players still apart of the Voyage take a coin from the Ocean and then moving clockwise from the Captain, choose whether to “Man” or “Port” (The round’s Captain must always “Man” if at least one other player chooses to “Man”).\nThose players that “Port” conclude their current “Voyage.” The Captain then rolls the appropriate number of dice (initially a single die).\nIf any of the dice rolls a “one,”  then the Voyage is concluded and all the players still a part of the Voyage must return their coins from the current Voyage to the Ocean (A new Voyage then begins).  If the captain doesn’t roll a one, but does roll the max die value on one of their dice, then the number of dice for the next round remains the same, whereas if neither a one or a max value is rolled on any of the dice, the number of dice rolled is increased by one.Regardless the Captain role always rotates clockwise to the next player apart of the Voyage.  The game concludes when there are not enough coins in the center of the table for everyone in the voyage to take a coin (the house profits these “spare coins”)'
   }
 }
 module.exports = RingTide
